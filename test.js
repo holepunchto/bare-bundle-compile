@@ -3,7 +3,7 @@ const test = require('brittle')
 const Bundle = require('bare-bundle')
 const compile = require('.')
 
-test('require', (t) => {
+test('require(\'id\')', (t) => {
   const bundle = new Bundle()
     .write('/foo.js', 'module.exports = require(\'./bar.js\')', {
       main: true,
@@ -16,7 +16,7 @@ test('require', (t) => {
   t.is(eval(compile(bundle)).exports, 42)
 })
 
-test('require.addon()', (t) => {
+test('require.addon(\'id\')', (t) => {
   const bundle = new Bundle()
     .write('/foo.js', 'module.exports = require.addon(\'.\')', {
       main: true,
@@ -38,7 +38,29 @@ test('require.addon()', (t) => {
   t.is(eval(compile(bundle)).exports, 'addon')
 })
 
-test('require.asset()', (t) => {
+test('require.addon()', (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', 'module.exports = require.addon()', {
+      main: true,
+      imports: {
+        '.': {
+          addon: '/foo.bare'
+        }
+      }
+    })
+
+  const require = () => {}
+
+  require.addon = (specifier) => {
+    t.is(specifier, '/foo.bare')
+
+    return 'addon'
+  }
+
+  t.is(eval(compile(bundle)).exports, 'addon')
+})
+
+test('require.asset(\'id\')', (t) => {
   const bundle = new Bundle()
     .write('/foo.js', 'module.exports = require.asset(\'./bar.txt\')', {
       main: true,
