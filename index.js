@@ -1,30 +1,20 @@
-module.exports = function compile (bundle) {
-  return (
-`{
-  const __bundle__ = {
+module.exports = (bundle) => `{
+  const __bundle = {
     builtinRequire: typeof require === 'function' ? require : null,
     cache: Object.create(null),
-    files: {${[...bundle].map(([key, source]) => `
-      ${JSON.stringify(key)}: {
-        imports: ${JSON.stringify(bundle.resolutions[key] || {})},
-        source: (require, module, exports, __filename, __dirname) => {${key.endsWith('.json') ? 'module.exports = ' + source : source}}
-      }`).join(',')}
-    },
     require: (filename) => {
-      let module = __bundle__.cache[filename]
-      if (module) return module
+      if (__bundle.cache[filename]) return __bundle.cache[filename]
 
-      const file = __bundle__.files[filename]
-      if (!file) throw new Error(\`Cannot find module '\${filename}'\`)
+      const file = __bundle.files[filename]
 
-      module = __bundle__.cache[filename] = {
+      const module = __bundle.cache[filename] = {
         exports: {},
         filename,
         dirname: filename.slice(0, filename.lastIndexOf('/')) || '/'
       }
 
       function require (specifier) {
-        return __bundle__.require(require.resolve(specifier)).exports
+        return __bundle.require(require.resolve(specifier)).exports
       }
 
       require.resolve = function resolve (specifier) {
@@ -48,7 +38,7 @@ module.exports = function compile (bundle) {
       }
 
       require.addon = function addon (specifier = '.') {
-        if (!__bundle__.builtinRequire || !__bundle__.builtinRequire.addon) {
+        if (!__bundle.builtinRequire || !__bundle.builtinRequire.addon) {
           throw new Error('Cannot load addons')
         }
 
@@ -58,16 +48,20 @@ module.exports = function compile (bundle) {
           throw new Error(\`Cannot find addon '\${specifier}' imported from '\${module.filename}'\`)
         }
 
-        return __bundle__.builtinRequire.addon(typeof resolved === 'object' ? resolved.addon : resolved)
+        return __bundle.builtinRequire.addon(typeof resolved === 'object' ? resolved.addon : resolved)
       }
 
-      file.source(require, module, module.exports, module.filename, module.dirname)
+      file.evaluate(require, module, module.exports, module.filename, module.dirname)
 
       return module
+    },
+    files: {${[...bundle].map(([key, source]) => `
+      ${JSON.stringify(key)}: {
+        imports: ${JSON.stringify(bundle.resolutions[key] || {})},
+        evaluate: (require, module, exports, __filename, __dirname) => {${key.endsWith('.json') ? 'module.exports = ' + source : source}}
+      }`).join(',')}
     }
   }
 
-  __bundle__.require(${JSON.stringify(bundle.main)})
+  __bundle.require(${JSON.stringify(bundle.main)})
 }`
-  )
-}
