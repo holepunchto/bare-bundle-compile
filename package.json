@@ -22,10 +22,11 @@
     "url": "https://github.com/holepunchto/bare-bundle-compile/issues"
   },
   "homepage": "https://github.com/holepunchto/bare-bundle-compile#readme",
-  "dependencies": {
+  "peerDependencies": {
     "bare-bundle": "^1.8.0"
   },
   "devDependencies": {
+    "bare-bundle": "*",
     "brittle": "^3.2.1",
     "standard": "^17.0.0"
   }
