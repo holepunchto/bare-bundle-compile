@@ -23,7 +23,7 @@
   },
   "homepage": "https://github.com/holepunchto/bare-bundle-compile#readme",
   "dependencies": {
-    "bare-bundle": "^1.7.0"
+    "bare-bundle": "^1.8.0"
   },
   "devDependencies": {
     "brittle": "^3.2.1",
