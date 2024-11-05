@@ -13,10 +13,10 @@ const Bundle = require('bare-bundle')
 const compile = require('bare-bundle-compile')
 
 const bundle = new Bundle()
-  .write('/foo.js', 'module.exports = require(\'./bar.js\')', {
+  .write('/foo.js', 'module.exports = require(\'./bar\')', {
     main: true,
     imports: {
-      './bar.js': '/bar.js'
+      './bar': '/bar.js'
     }
   })
   .write('/bar.js', 'module.exports = 42')
