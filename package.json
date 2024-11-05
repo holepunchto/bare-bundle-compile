@@ -1,6 +1,6 @@
 {
   "name": "bare-bundle-compile",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Compile a bundle of CommonJS modules to a single module",
   "exports": {
     ".": "./index.js",
