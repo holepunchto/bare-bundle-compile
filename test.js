@@ -5,10 +5,10 @@ const compile = require('.')
 
 test('require(\'id\')', (t) => {
   const bundle = new Bundle()
-    .write('/foo.js', 'module.exports = require(\'./bar.js\')', {
+    .write('/foo.js', 'module.exports = require(\'./bar\')', {
       main: true,
       imports: {
-        './bar.js': '/bar.js'
+        './bar': '/bar.js'
       }
     })
     .write('/bar.js', 'module.exports = 42')
@@ -16,9 +16,9 @@ test('require(\'id\')', (t) => {
   t.is(eval(compile(bundle)).exports, 42)
 })
 
-test('require.addon(\'id\')', (t) => {
+test('require.addon()', (t) => {
   const bundle = new Bundle()
-    .write('/foo.js', 'module.exports = require.addon(\'.\')', {
+    .write('/foo.js', 'module.exports = require.addon()', {
       main: true,
       imports: {
         '.': {
@@ -38,9 +38,9 @@ test('require.addon(\'id\')', (t) => {
   t.is(eval(compile(bundle)).exports, 'addon')
 })
 
-test('require.addon()', (t) => {
+test('require.addon(\'id\')', (t) => {
   const bundle = new Bundle()
-    .write('/foo.js', 'module.exports = require.addon()', {
+    .write('/foo.js', 'module.exports = require.addon(\'.\')', {
       main: true,
       imports: {
         '.': {
