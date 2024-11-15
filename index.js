@@ -15,8 +15,6 @@ module.exports = (bundle) => `{
       }
 
       if (url.startsWith('builtin:')) {
-        if (!__bundle.builtinRequire) throw new Error('Cannot load builtin modules')
-
         module.exports = __bundle.builtinRequire(url.replace(/^builtin:/, ''))
 
         return module
@@ -38,6 +36,12 @@ module.exports = (bundle) => `{
       }
 
       require.addon = function addon (specifier = '.', parentURL = url) {
+        return __bundle.builtinRequire.addon(__bundle.addon(specifier, parentURL))
+      }
+
+      require.addon.host = __bundle.builtinRequire.addon?.host
+
+      require.addon.resolve = function resolve (specifier = '.', parentURL = url) {
         return __bundle.addon(specifier, parentURL)
       }
 
@@ -63,8 +67,6 @@ module.exports = (bundle) => `{
       return typeof resolved === 'object' ? resolved.default : resolved
     },
     addon: (specifier = '.', parentURL) => {
-      if (!__bundle.builtinRequire || !__bundle.builtinRequire.addon) throw new Error('Cannot load addons')
-
       const file = __bundle.files[parentURL] || null
 
       if (file === null) throw new Error(\`Cannot find module '\${parentURL}'\`)
@@ -75,7 +77,7 @@ module.exports = (bundle) => `{
         throw new Error(\`Cannot find addon '\${specifier}' imported from '\${parentURL}'\`)
       }
 
-      return __bundle.builtinRequire.addon(typeof resolved === 'object' ? resolved.addon : resolved)
+      return typeof resolved === 'object' ? resolved.addon : resolved
     },
     asset: (specifier, parentURL) => {
       const file = __bundle.files[parentURL] || null

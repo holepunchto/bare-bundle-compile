@@ -44,7 +44,7 @@ test('require.addon()', (t) => {
       }
     })
 
-  const require = () => {}
+  const require = () => { t.fail() }
 
   require.addon = (specifier) => {
     t.is(specifier, '/addon.bare')
@@ -66,7 +66,7 @@ test('require.addon(\'id\')', (t) => {
       }
     })
 
-  const require = () => {}
+  const require = () => { t.fail() }
 
   require.addon = (specifier) => {
     t.is(specifier, '/addon.bare')
@@ -92,7 +92,7 @@ test('require.addon(\'id\', referrer)', (t) => {
     .write('/a/package.json', '{ "name": "addon", "addon": true }')
     .write('/b/index.js', 'module.exports = (specifier, referrer) => require.addon(specifier, referrer)')
 
-  const require = () => {}
+  const require = () => { t.fail() }
 
   require.addon = (specifier) => {
     t.is(specifier, '/addon.bare')
@@ -101,6 +101,79 @@ test('require.addon(\'id\', referrer)', (t) => {
   }
 
   t.is(eval(compile(bundle)).exports, 'addon')
+})
+
+test('require.addon.resolve()', (t) => {
+  const bundle = new Bundle()
+    .write('/binding.js', 'module.exports = require.addon.resolve()', {
+      main: true,
+      imports: {
+        '.': {
+          addon: '/addon.bare'
+        }
+      }
+    })
+
+  const require = () => { t.fail() }
+
+  require.addon = () => { t.fail() }
+
+  t.is(eval(compile(bundle)).exports, '/addon.bare')
+})
+
+test('require.addon.resolve(\'id\')', (t) => {
+  const bundle = new Bundle()
+    .write('/binding.js', 'module.exports = require.addon.resolve(\'.\')', {
+      main: true,
+      imports: {
+        '.': {
+          addon: '/addon.bare'
+        }
+      }
+    })
+
+  const require = () => { t.fail() }
+
+  require.addon = () => { t.fail() }
+
+  t.is(eval(compile(bundle)).exports, '/addon.bare')
+})
+
+test('require.addon.resolve(\'id\', referrer)', (t) => {
+  const bundle = new Bundle()
+    .write('/a/binding.js', 'module.exports = require(\'../b\')(\'.\', __filename)', {
+      main: true,
+      imports: {
+        '#package': '/a/package.json',
+        '../b': '/b/index.js',
+        '.': {
+          addon: '/addon.bare'
+        }
+      }
+    })
+    .write('/a/package.json', '{ "name": "addon", "addon": true }')
+    .write('/b/index.js', 'module.exports = (specifier, referrer) => require.addon.resolve(specifier, referrer)')
+
+  const require = () => { t.fail() }
+
+  require.addon = () => { t.fail() }
+
+  t.is(eval(compile(bundle)).exports, '/addon.bare')
+})
+
+test('require.addon.host', (t) => {
+  const bundle = new Bundle()
+    .write('/binding.js', 'module.exports = require.addon.host', {
+      main: true,
+      imports: {}
+    })
+
+  const require = () => { t.fail() }
+
+  require.addon = () => { t.fail() }
+  require.addon.host = 'unknown'
+
+  t.is(eval(compile(bundle)).exports, 'unknown')
 })
 
 test('require.asset(\'id\')', (t) => {
