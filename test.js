@@ -1,4 +1,3 @@
-/* eslint-disable no-eval */
 const test = require('brittle')
 const Bundle = require('bare-bundle')
 const compile = require('.')
@@ -280,7 +279,6 @@ test("require('builtin')", (t) => {
   )
 
   const require = (specifier) => {
-    // eslint-disable-line no-unused-vars
     t.is(specifier, 'fs')
 
     return 'fs'
