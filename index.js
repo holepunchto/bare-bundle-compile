@@ -92,11 +92,15 @@ module.exports = (bundle) => `{
 
       return typeof resolved === 'object' ? resolved.asset : resolved
     },
-    files: {${[...bundle].map(([key, source]) => `
+    files: {${[...bundle]
+      .map(
+        ([key, source]) => `
       ${JSON.stringify(key)}: {
         imports: ${JSON.stringify(bundle.resolutions[key] || {})},
         evaluate: (require, module, exports, __filename, __dirname) => {${key.endsWith('.json') ? 'module.exports = ' + source : source}}
-      }`).join(',')}
+      }`
+      )
+      .join(',')}
     }
   }
 
