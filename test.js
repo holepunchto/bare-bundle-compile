@@ -221,6 +221,7 @@ test('require.addon.host', (t) => {
   require.addon = () => {
     t.fail()
   }
+
   require.addon.host = 'unknown'
 
   t.is(eval(compile(bundle)).exports, 'unknown')

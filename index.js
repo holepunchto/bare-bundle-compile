@@ -24,28 +24,28 @@ module.exports = (bundle) => `{
 
       if (file === null) throw new Error(\`Cannot find module '\${url}'\`)
 
-      function require (specifier) {
+      function require(specifier) {
         return __bundle.load(__bundle.resolve(specifier, url)).exports
       }
 
       require.main = ${JSON.stringify(bundle.main)}
       require.cache = __bundle.cache
 
-      require.resolve = function resolve (specifier, parentURL = url) {
+      require.resolve = function resolve(specifier, parentURL = url) {
         return __bundle.resolve(specifier, parentURL)
       }
 
-      require.addon = function addon (specifier = '.', parentURL = url) {
+      require.addon = function addon(specifier = '.', parentURL = url) {
         return __bundle.builtinRequire.addon(__bundle.addon(specifier, parentURL))
       }
 
       require.addon.host = __bundle.builtinRequire.addon?.host
 
-      require.addon.resolve = function resolve (specifier = '.', parentURL = url) {
+      require.addon.resolve = function resolve(specifier = '.', parentURL = url) {
         return __bundle.addon(specifier, parentURL)
       }
 
-      require.asset = function asset (specifier, parentURL = url) {
+      require.asset = function asset(specifier, parentURL = url) {
         return __bundle.asset(specifier, parentURL)
       }
 
