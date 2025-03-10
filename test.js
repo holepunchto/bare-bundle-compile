@@ -32,6 +32,20 @@ test("circular require('id')", (t) => {
   t.is(eval(compile(bundle)).exports, 42)
 })
 
+test("require('id'), globally preresolved", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar')", {
+      main: true
+    })
+    .write('/baz.js', 'module.exports = 42')
+
+  bundle.imports = {
+    './bar': '/baz.js'
+  }
+
+  t.is(eval(compile(bundle)).exports, 42)
+})
+
 test('require.addon()', (t) => {
   const bundle = new Bundle().write(
     '/binding.js',
@@ -286,4 +300,120 @@ test("require('builtin')", (t) => {
   }
 
   t.is(eval(compile(bundle)).exports, 'fs')
+})
+
+test("require('.json')", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar.json')", {
+      main: true,
+      imports: {
+        './bar.json': '/bar.json'
+      }
+    })
+    .write('/bar.json', '{ "hello": "world" }')
+
+  t.alike(eval(compile(bundle)).exports, {
+    hello: 'world'
+  })
+})
+
+test("require('.bin')", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar.bin')", {
+      main: true,
+      imports: {
+        './bar.bin': '/bar.bin'
+      }
+    })
+    .write('/bar.bin', 'Hello world')
+
+  t.alike(eval(compile(bundle)).exports, Buffer.from('Hello world'))
+})
+
+test("require('.txt')", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar.txt')", {
+      main: true,
+      imports: {
+        './bar.txt': '/bar.txt'
+      }
+    })
+    .write('/bar.txt', 'Hello world')
+
+  t.is(eval(compile(bundle)).exports, 'Hello world')
+})
+
+test("require('id', { with: { type: 'json' } })", (t) => {
+  const bundle = new Bundle()
+    .write(
+      '/foo.js',
+      "module.exports = require('./bar.json', { with: { type: 'json' } })",
+      {
+        main: true,
+        imports: {
+          './bar.json': '/bar.json'
+        }
+      }
+    )
+    .write('/bar.json', '{ "hello": "world" }')
+
+  t.alike(eval(compile(bundle)).exports, {
+    hello: 'world'
+  })
+})
+
+test("require('id', { with: { type: 'binary' } })", (t) => {
+  const bundle = new Bundle()
+    .write(
+      '/foo.js',
+      "module.exports = require('./bar.bin', { with: { type: 'binary' } })",
+      {
+        main: true,
+        imports: {
+          './bar.bin': '/bar.bin'
+        }
+      }
+    )
+    .write('/bar.bin', 'Hello world')
+
+  t.alike(eval(compile(bundle)).exports, Buffer.from('Hello world'))
+})
+
+test("require('id', { with: { type: 'text' } })", (t) => {
+  const bundle = new Bundle()
+    .write(
+      '/foo.js',
+      "module.exports = require('./bar.txt', { with: { type: 'text' } })",
+      {
+        main: true,
+        imports: {
+          './bar.txt': '/bar.txt'
+        }
+      }
+    )
+    .write('/bar.txt', 'Hello world')
+
+  t.is(eval(compile(bundle)).exports, 'Hello world')
+})
+
+test("require('id', { with: { type: 'type' } }), asserted type mismatch", (t) => {
+  const bundle = new Bundle()
+    .write(
+      '/foo.js',
+      "require('./bar.txt', { with: { type: 'text' } }); require('./bar.txt', { with: { type: 'binary' } })",
+      {
+        main: true,
+        imports: {
+          './bar.txt': '/bar.txt'
+        }
+      }
+    )
+    .write('/bar.txt', 'Hello world')
+
+  try {
+    eval(compile(bundle))
+    t.fail()
+  } catch (err) {
+    t.comment(err.message)
+  }
 })

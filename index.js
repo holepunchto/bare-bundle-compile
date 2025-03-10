@@ -1,14 +1,30 @@
-module.exports = (bundle) => `{
+module.exports = function compile(bundle) {
+  return `{
   const __bundle = {
     builtinRequire: typeof require === 'function' ? require : null,
     cache: Object.create(null),
-    load: (url) => {
-      if (__bundle.cache[url]) return __bundle.cache[url]
+    load: (url, attributes) => {
+      const type = url.endsWith('.json')
+        ? 'json'
+        : url.endsWith('.bin')
+          ? 'binary'
+          : url.endsWith('.txt')
+            ? 'text'
+            : 'script'
+
+      if (typeof attributes === 'object' && attributes !== null && attributes.type !== type) {
+        throw new Error(\`Module '\${url}' is not of type '\${attributes.type}'\`)
+      }
+
+      let module = __bundle.cache[url] || null
+
+      if (module !== null) return module
 
       const filename = url
       const dirname = url.slice(0, url.lastIndexOf('/')) || '/'
 
-      const module = __bundle.cache[url] = {
+      module = __bundle.cache[url] = {
+        type,
         filename,
         dirname,
         exports: {}
@@ -20,12 +36,14 @@ module.exports = (bundle) => `{
         return module
       }
 
-      const file = __bundle.files[url] || null
+      const fn = __bundle.modules[url] || null
 
-      if (file === null) throw new Error(\`Cannot find module '\${url}'\`)
+      if (fn === null) throw new Error(\`Cannot find module '\${url}'\`)
 
-      function require(specifier) {
-        return __bundle.load(__bundle.resolve(specifier, url)).exports
+      function require(specifier, opts = {}) {
+        const attributes = opts && opts.with
+
+        return __bundle.load(__bundle.resolve(specifier, url), attributes).exports
       }
 
       require.main = ${JSON.stringify(bundle.main)}
@@ -49,16 +67,12 @@ module.exports = (bundle) => `{
         return __bundle.asset(specifier, parentURL)
       }
 
-      file.evaluate(require, module, module.exports, module.filename, module.dirname)
+      fn(require, module, module.exports, module.filename, module.dirname)
 
       return module
     },
     resolve: (specifier, parentURL) => {
-      const file = __bundle.files[parentURL] || null
-
-      if (file === null) throw new Error(\`Cannot find module '\${parentURL}'\`)
-
-      const resolved = file.imports[specifier]
+      const resolved = __bundle.imports[specifier] || __bundle.resolutions[parentURL]?.[specifier]
 
       if (!resolved || (typeof resolved === 'object' && !resolved.default)) {
         throw new Error(\`Cannot find module '\${specifier}' imported from '\${parentURL}'\`)
@@ -67,11 +81,7 @@ module.exports = (bundle) => `{
       return typeof resolved === 'object' ? resolved.default : resolved
     },
     addon: (specifier = '.', parentURL) => {
-      const file = __bundle.files[parentURL] || null
-
-      if (file === null) throw new Error(\`Cannot find module '\${parentURL}'\`)
-
-      const resolved = file.imports[specifier]
+      const resolved = __bundle.imports[specifier] || __bundle.resolutions[parentURL]?.[specifier]
 
       if (!resolved || (typeof resolved === 'object' && !resolved.addon)) {
         throw new Error(\`Cannot find addon '\${specifier}' imported from '\${parentURL}'\`)
@@ -80,11 +90,7 @@ module.exports = (bundle) => `{
       return typeof resolved === 'object' ? resolved.addon : resolved
     },
     asset: (specifier, parentURL) => {
-      const file = __bundle.files[parentURL] || null
-
-      if (file === null) throw new Error(\`Cannot find module '\${parentURL}'\`)
-
-      const resolved = file.imports[specifier]
+      const resolved = __bundle.imports[specifier] || __bundle.resolutions[parentURL]?.[specifier]
 
       if (!resolved || (typeof resolved === 'object' && !resolved.asset)) {
         throw new Error(\`Cannot find asset '\${specifier}' imported from '\${parentURL}'\`)
@@ -92,13 +98,20 @@ module.exports = (bundle) => `{
 
       return typeof resolved === 'object' ? resolved.asset : resolved
     },
-    files: {${[...bundle]
+    imports: ${JSON.stringify(bundle.imports)},
+    resolutions: ${JSON.stringify(bundle.resolutions)},
+    modules: {${[...bundle]
       .map(
         ([key, source]) => `
-      ${JSON.stringify(key)}: {
-        imports: ${JSON.stringify(bundle.resolutions[key] || {})},
-        evaluate: (require, module, exports, __filename, __dirname) => {${key.endsWith('.json') ? 'module.exports = ' + source : source}}
-      }`
+      ${JSON.stringify(key)}: (require, module, exports, __filename, __dirname) => {${
+        key.endsWith('.json')
+          ? `module.exports = ${source}`
+          : key.endsWith('.bin')
+            ? `module.exports = Buffer.from(${JSON.stringify(source.toString('base64'))}, 'base64')`
+            : key.endsWith('.txt')
+              ? `module.exports = ${JSON.stringify(source.toString())}`
+              : source
+      }}`
       )
       .join(',')}
     }
@@ -106,3 +119,4 @@ module.exports = (bundle) => `{
 
   __bundle.load(${JSON.stringify(bundle.main)})
 }`
+}
