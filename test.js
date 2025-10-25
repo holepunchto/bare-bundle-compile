@@ -259,6 +259,10 @@ test("require('builtin')", (t) => {
     return 'fs'
   }
 
+  require.addon = () => {
+    t.fail()
+  }
+
   t.is(eval(compile(bundle)).exports, 'fs')
 })
 
