@@ -104,7 +104,7 @@ module.exports = function compile(bundle) {
     modules: {${[...bundle]
       .map(
         ([key, source]) => `
-      ${JSON.stringify(key)}: (require, module, exports, __filename, __dirname) => {${
+      ${JSON.stringify(key)}: (require, module, exports, __filename, __dirname, __bundle) => {${
         key.endsWith('.json')
           ? `module.exports = ${source}`
           : key.endsWith('.bin')
