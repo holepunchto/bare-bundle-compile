@@ -69,6 +69,27 @@ test('require.addon()', (t) => {
   t.is(eval(compile(bundle)).exports, 'addon')
 })
 
+test('require.addon(), shorthand resolution', (t) => {
+  const bundle = new Bundle().write('/binding.js', 'module.exports = require.addon()', {
+    main: true,
+    imports: {
+      '.': '/addon.bare'
+    }
+  })
+
+  const require = () => {
+    t.fail()
+  }
+
+  require.addon = (specifier) => {
+    t.is(specifier, '/addon.bare')
+
+    return 'addon'
+  }
+
+  t.is(eval(compile(bundle)).exports, 'addon')
+})
+
 test("require.addon('id')", (t) => {
   const bundle = new Bundle().write('/binding.js', "module.exports = require.addon('.')", {
     main: true,
@@ -226,6 +247,17 @@ test("require.asset('id')", (t) => {
   t.is(eval(compile(bundle)).exports, '/baz.txt')
 })
 
+test("require.asset('id'), shorthand resolution", (t) => {
+  const bundle = new Bundle().write('/foo.js', "module.exports = require.asset('./bar.txt')", {
+    main: true,
+    imports: {
+      './bar.txt': '/baz.txt'
+    }
+  })
+
+  t.is(eval(compile(bundle)).exports, '/baz.txt')
+})
+
 test("require.asset('id', referrer)", (t) => {
   const bundle = new Bundle()
     .write('/a/foo.js', "module.exports = require('../b')('./bar.txt', __filename)", {
@@ -256,14 +288,14 @@ test("require('builtin')", (t) => {
   const require = (specifier) => {
     t.is(specifier, 'fs')
 
-    return 'fs'
+    return 42
   }
 
   require.addon = () => {
     t.fail()
   }
 
-  t.is(eval(compile(bundle)).exports, 'fs')
+  t.is(eval(compile(bundle)).exports, 42)
 })
 
 test("require('.json')", (t) => {
