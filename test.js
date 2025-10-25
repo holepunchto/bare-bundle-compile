@@ -417,3 +417,21 @@ test("require('id', { with: { type: 'type' } }), asserted type mismatch", (t) =>
     t.comment(err.message)
   }
 })
+
+test('mounted bundle', (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar')", {
+      main: true,
+      imports: {
+        './bar': '/bar.js'
+      }
+    })
+    .write('/bar.js', 'module.exports = 42')
+    .mount('file:///root/')
+
+  const module = eval(compile(bundle))
+
+  t.is(module.url, 'file:///root/foo.js')
+  t.is(module.filename, '/root/foo.js')
+  t.is(module.dirname, '/root')
+})

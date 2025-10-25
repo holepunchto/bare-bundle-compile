@@ -20,10 +20,11 @@ module.exports = function compile(bundle) {
 
       if (module !== null) return module
 
-      const filename = url
-      const dirname = url.slice(0, url.lastIndexOf('/')) || '/'
+      const filename = url.replace(/^[a-z][a-z\\d+\\-.]*:\\/*/, '/')
+      const dirname = filename.slice(0, filename.lastIndexOf('/')) || '/'
 
       module = __bundle.cache[url] = {
+        url,
         type,
         filename,
         dirname,
