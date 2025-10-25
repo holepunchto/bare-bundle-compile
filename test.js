@@ -47,18 +47,14 @@ test("require('id'), globally preresolved", (t) => {
 })
 
 test('require.addon()', (t) => {
-  const bundle = new Bundle().write(
-    '/binding.js',
-    'module.exports = require.addon()',
-    {
-      main: true,
-      imports: {
-        '.': {
-          addon: '/addon.bare'
-        }
+  const bundle = new Bundle().write('/binding.js', 'module.exports = require.addon()', {
+    main: true,
+    imports: {
+      '.': {
+        addon: '/addon.bare'
       }
     }
-  )
+  })
 
   const require = () => {
     t.fail()
@@ -74,18 +70,14 @@ test('require.addon()', (t) => {
 })
 
 test("require.addon('id')", (t) => {
-  const bundle = new Bundle().write(
-    '/binding.js',
-    "module.exports = require.addon('.')",
-    {
-      main: true,
-      imports: {
-        '.': {
-          addon: '/addon.bare'
-        }
+  const bundle = new Bundle().write('/binding.js', "module.exports = require.addon('.')", {
+    main: true,
+    imports: {
+      '.': {
+        addon: '/addon.bare'
       }
     }
-  )
+  })
 
   const require = () => {
     t.fail()
@@ -102,20 +94,16 @@ test("require.addon('id')", (t) => {
 
 test("require.addon('id', referrer)", (t) => {
   const bundle = new Bundle()
-    .write(
-      '/a/binding.js',
-      "module.exports = require('../b')('.', __filename)",
-      {
-        main: true,
-        imports: {
-          '#package': '/a/package.json',
-          '../b': '/b/index.js',
-          '.': {
-            addon: '/addon.bare'
-          }
+    .write('/a/binding.js', "module.exports = require('../b')('.', __filename)", {
+      main: true,
+      imports: {
+        '#package': '/a/package.json',
+        '../b': '/b/index.js',
+        '.': {
+          addon: '/addon.bare'
         }
       }
-    )
+    })
     .write('/a/package.json', '{ "name": "addon", "addon": true }')
     .write(
       '/b/index.js',
@@ -136,18 +124,14 @@ test("require.addon('id', referrer)", (t) => {
 })
 
 test('require.addon.resolve()', (t) => {
-  const bundle = new Bundle().write(
-    '/binding.js',
-    'module.exports = require.addon.resolve()',
-    {
-      main: true,
-      imports: {
-        '.': {
-          addon: '/addon.bare'
-        }
+  const bundle = new Bundle().write('/binding.js', 'module.exports = require.addon.resolve()', {
+    main: true,
+    imports: {
+      '.': {
+        addon: '/addon.bare'
       }
     }
-  )
+  })
 
   const require = () => {
     t.fail()
@@ -161,18 +145,14 @@ test('require.addon.resolve()', (t) => {
 })
 
 test("require.addon.resolve('id')", (t) => {
-  const bundle = new Bundle().write(
-    '/binding.js',
-    "module.exports = require.addon.resolve('.')",
-    {
-      main: true,
-      imports: {
-        '.': {
-          addon: '/addon.bare'
-        }
+  const bundle = new Bundle().write('/binding.js', "module.exports = require.addon.resolve('.')", {
+    main: true,
+    imports: {
+      '.': {
+        addon: '/addon.bare'
       }
     }
-  )
+  })
 
   const require = () => {
     t.fail()
@@ -187,20 +167,16 @@ test("require.addon.resolve('id')", (t) => {
 
 test("require.addon.resolve('id', referrer)", (t) => {
   const bundle = new Bundle()
-    .write(
-      '/a/binding.js',
-      "module.exports = require('../b')('.', __filename)",
-      {
-        main: true,
-        imports: {
-          '#package': '/a/package.json',
-          '../b': '/b/index.js',
-          '.': {
-            addon: '/addon.bare'
-          }
+    .write('/a/binding.js', "module.exports = require('../b')('.', __filename)", {
+      main: true,
+      imports: {
+        '#package': '/a/package.json',
+        '../b': '/b/index.js',
+        '.': {
+          addon: '/addon.bare'
         }
       }
-    )
+    })
     .write('/a/package.json', '{ "name": "addon", "addon": true }')
     .write(
       '/b/index.js',
@@ -219,14 +195,10 @@ test("require.addon.resolve('id', referrer)", (t) => {
 })
 
 test('require.addon.host', (t) => {
-  const bundle = new Bundle().write(
-    '/binding.js',
-    'module.exports = require.addon.host',
-    {
-      main: true,
-      imports: {}
-    }
-  )
+  const bundle = new Bundle().write('/binding.js', 'module.exports = require.addon.host', {
+    main: true,
+    imports: {}
+  })
 
   const require = () => {
     t.fail()
@@ -242,37 +214,29 @@ test('require.addon.host', (t) => {
 })
 
 test("require.asset('id')", (t) => {
-  const bundle = new Bundle().write(
-    '/foo.js',
-    "module.exports = require.asset('./bar.txt')",
-    {
-      main: true,
-      imports: {
-        './bar.txt': {
-          asset: '/baz.txt'
-        }
+  const bundle = new Bundle().write('/foo.js', "module.exports = require.asset('./bar.txt')", {
+    main: true,
+    imports: {
+      './bar.txt': {
+        asset: '/baz.txt'
       }
     }
-  )
+  })
 
   t.is(eval(compile(bundle)).exports, '/baz.txt')
 })
 
 test("require.asset('id', referrer)", (t) => {
   const bundle = new Bundle()
-    .write(
-      '/a/foo.js',
-      "module.exports = require('../b')('./bar.txt', __filename)",
-      {
-        main: true,
-        imports: {
-          '../b': '/b/index.js',
-          './bar.txt': {
-            asset: '/a/baz.txt'
-          }
+    .write('/a/foo.js', "module.exports = require('../b')('./bar.txt', __filename)", {
+      main: true,
+      imports: {
+        '../b': '/b/index.js',
+        './bar.txt': {
+          asset: '/a/baz.txt'
         }
       }
-    )
+    })
     .write(
       '/b/index.js',
       'module.exports = (specifier, referrer) => require.asset(specifier, referrer)'
@@ -282,16 +246,12 @@ test("require.asset('id', referrer)", (t) => {
 })
 
 test("require('builtin')", (t) => {
-  const bundle = new Bundle().write(
-    '/foo.js',
-    "module.exports = require('fs')",
-    {
-      main: true,
-      imports: {
-        fs: 'builtin:fs'
-      }
+  const bundle = new Bundle().write('/foo.js', "module.exports = require('fs')", {
+    main: true,
+    imports: {
+      fs: 'builtin:fs'
     }
-  )
+  })
 
   const require = (specifier) => {
     t.is(specifier, 'fs')
@@ -345,16 +305,12 @@ test("require('.txt')", (t) => {
 
 test("require('id', { with: { type: 'json' } })", (t) => {
   const bundle = new Bundle()
-    .write(
-      '/foo.js',
-      "module.exports = require('./bar.json', { with: { type: 'json' } })",
-      {
-        main: true,
-        imports: {
-          './bar.json': '/bar.json'
-        }
+    .write('/foo.js', "module.exports = require('./bar.json', { with: { type: 'json' } })", {
+      main: true,
+      imports: {
+        './bar.json': '/bar.json'
       }
-    )
+    })
     .write('/bar.json', '{ "hello": "world" }')
 
   t.alike(eval(compile(bundle)).exports, {
@@ -364,16 +320,12 @@ test("require('id', { with: { type: 'json' } })", (t) => {
 
 test("require('id', { with: { type: 'binary' } })", (t) => {
   const bundle = new Bundle()
-    .write(
-      '/foo.js',
-      "module.exports = require('./bar.bin', { with: { type: 'binary' } })",
-      {
-        main: true,
-        imports: {
-          './bar.bin': '/bar.bin'
-        }
+    .write('/foo.js', "module.exports = require('./bar.bin', { with: { type: 'binary' } })", {
+      main: true,
+      imports: {
+        './bar.bin': '/bar.bin'
       }
-    )
+    })
     .write('/bar.bin', 'Hello world')
 
   t.alike(eval(compile(bundle)).exports, Buffer.from('Hello world'))
@@ -381,16 +333,12 @@ test("require('id', { with: { type: 'binary' } })", (t) => {
 
 test("require('id', { with: { type: 'text' } })", (t) => {
   const bundle = new Bundle()
-    .write(
-      '/foo.js',
-      "module.exports = require('./bar.txt', { with: { type: 'text' } })",
-      {
-        main: true,
-        imports: {
-          './bar.txt': '/bar.txt'
-        }
+    .write('/foo.js', "module.exports = require('./bar.txt', { with: { type: 'text' } })", {
+      main: true,
+      imports: {
+        './bar.txt': '/bar.txt'
       }
-    )
+    })
     .write('/bar.txt', 'Hello world')
 
   t.is(eval(compile(bundle)).exports, 'Hello world')
