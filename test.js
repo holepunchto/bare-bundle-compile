@@ -321,9 +321,9 @@ test("require('.bin')", (t) => {
         './bar.bin': '/bar.bin'
       }
     })
-    .write('/bar.bin', 'Hello world')
+    .write('/bar.bin', new Uint8Array([1, 2, 3, 4]))
 
-  t.alike(eval(compile(bundle)).exports, Buffer.from('Hello world'))
+  t.alike(eval(compile(bundle)).exports, new Uint8Array([1, 2, 3, 4]))
 })
 
 test("require('.txt')", (t) => {
@@ -362,9 +362,9 @@ test("require('id', { with: { type: 'binary' } })", (t) => {
         './bar.bin': '/bar.bin'
       }
     })
-    .write('/bar.bin', 'Hello world')
+    .write('/bar.bin', new Uint8Array([1, 2, 3, 4]))
 
-  t.alike(eval(compile(bundle)).exports, Buffer.from('Hello world'))
+  t.alike(eval(compile(bundle)).exports, new Uint8Array([1, 2, 3, 4]))
 })
 
 test("require('id', { with: { type: 'text' } })", (t) => {
@@ -393,6 +393,69 @@ test("require('id', { with: { type: 'type' } }), asserted type mismatch", (t) =>
       }
     )
     .write('/bar.txt', 'Hello world')
+
+  try {
+    eval(compile(bundle))
+    t.fail()
+  } catch (err) {
+    t.comment(err.message)
+  }
+})
+
+test('require.main', (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "exports.main = require.main, exports.bar = require('./bar')", {
+      main: true,
+      imports: {
+        './bar': '/bar.js'
+      }
+    })
+    .write('/bar.js', 'exports.main = require.main')
+
+  const module = eval(compile(bundle))
+
+  t.is(module.exports.main, module)
+  t.is(module.exports.bar.main, module)
+})
+
+test('module not found', (t) => {
+  const bundle = new Bundle().write('/foo.js', "module.exports = require('./bar')", {
+    main: true
+  })
+
+  try {
+    eval(compile(bundle))
+    t.fail()
+  } catch (err) {
+    t.comment(err.message)
+  }
+})
+
+test('addon not found', (t) => {
+  const bundle = new Bundle().write('/binding.js', 'module.exports = require.addon()', {
+    main: true
+  })
+
+  const require = () => {
+    t.fail()
+  }
+
+  require.addon = () => {
+    t.fail()
+  }
+
+  try {
+    eval(compile(bundle))
+    t.fail()
+  } catch (err) {
+    t.comment(err.message)
+  }
+})
+
+test('asset not found', (t) => {
+  const bundle = new Bundle().write('/foo.js', "module.exports = require.asset('./bar.txt')", {
+    main: true
+  })
 
   try {
     eval(compile(bundle))

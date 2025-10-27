@@ -1,9 +1,20 @@
+const PROTOCOL = /^[a-z][a-z\d+\-.]*:\/*/
+
 module.exports = function compile(bundle) {
   return `{
   const __bundle = {
+    imports: ${JSON.stringify(bundle.imports)},
+    resolutions: ${JSON.stringify(bundle.resolutions)},
+    modules: {${[...bundle].map(
+      ([key, source]) =>
+        `${JSON.stringify(key)}: (require, module, exports, __filename, __dirname, __bundle) => {${compileModule(
+          key,
+          source
+        )}}`
+    )}
+    },
     builtinRequire: typeof require === 'function' ? require : null,
-    cache: Object.create(null),
-    load: (url, attributes) => {
+    load(cache, url, referrer = null, attributes = null) {
       const type = url.endsWith('.json')
         ? 'json'
         : url.endsWith('.bin')
@@ -16,18 +27,23 @@ module.exports = function compile(bundle) {
         throw new Error(\`Module '\${url}' is not of type '\${attributes.type}'\`)
       }
 
-      let module = __bundle.cache[url] || null
+      let module = cache[url] || null
 
       if (module !== null) return module
 
-      const filename = url.replace(/^[a-z][a-z\\d+\\-.]*:\\/*/, '/')
+      const { imports, resolutions } = __bundle
+
+      const filename = url.replace(${PROTOCOL}, '/')
       const dirname = filename.slice(0, filename.lastIndexOf('/')) || '/'
 
-      module = __bundle.cache[url] = {
+      module = cache[url] = {
         url,
         type,
         filename,
         dirname,
+        imports,
+        resolutions,
+        main: null,
         exports: {}
       }
 
@@ -37,6 +53,8 @@ module.exports = function compile(bundle) {
         return module
       }
 
+      module.main = referrer ? referrer.main : module
+
       const fn = __bundle.modules[url] || null
 
       if (fn === null) throw new Error(\`Cannot find module '\${url}'\`)
@@ -44,11 +62,11 @@ module.exports = function compile(bundle) {
       function require(specifier, opts = {}) {
         const attributes = opts && opts.with
 
-        return __bundle.load(__bundle.resolve(specifier, url), attributes).exports
+        return __bundle.load(cache, __bundle.resolve(specifier, url), module, attributes).exports
       }
 
-      require.main = ${JSON.stringify(bundle.main)}
-      require.cache = __bundle.cache
+      require.main = module.main
+      require.cache = cache
 
       require.resolve = function resolve(specifier, parentURL = url) {
         return __bundle.resolve(specifier, parentURL)
@@ -72,7 +90,7 @@ module.exports = function compile(bundle) {
 
       return module
     },
-    resolve: (specifier, parentURL) => {
+    resolve(specifier, parentURL) {
       const resolved = __bundle.imports[specifier] || __bundle.resolutions[parentURL]?.[specifier]
 
       if (!resolved || (typeof resolved === 'object' && !resolved.default)) {
@@ -81,7 +99,7 @@ module.exports = function compile(bundle) {
 
       return typeof resolved === 'object' ? resolved.default : resolved
     },
-    addon: (specifier = '.', parentURL) => {
+    addon(specifier = '.', parentURL) {
       const resolved = __bundle.imports[specifier] || __bundle.resolutions[parentURL]?.[specifier]
 
       if (!resolved || (typeof resolved === 'object' && !resolved.addon)) {
@@ -90,7 +108,7 @@ module.exports = function compile(bundle) {
 
       return typeof resolved === 'object' ? resolved.addon : resolved
     },
-    asset: (specifier, parentURL) => {
+    asset(specifier, parentURL) {
       const resolved = __bundle.imports[specifier] || __bundle.resolutions[parentURL]?.[specifier]
 
       if (!resolved || (typeof resolved === 'object' && !resolved.asset)) {
@@ -98,26 +116,25 @@ module.exports = function compile(bundle) {
       }
 
       return typeof resolved === 'object' ? resolved.asset : resolved
-    },
-    imports: ${JSON.stringify(bundle.imports)},
-    resolutions: ${JSON.stringify(bundle.resolutions)},
-    modules: {${[...bundle]
-      .map(
-        ([key, source]) => `
-      ${JSON.stringify(key)}: (require, module, exports, __filename, __dirname, __bundle) => {${
-        key.endsWith('.json')
-          ? `module.exports = ${source}`
-          : key.endsWith('.bin')
-            ? `module.exports = Buffer.from(${JSON.stringify(source.toString('base64'))}, 'base64')`
-            : key.endsWith('.txt')
-              ? `module.exports = ${JSON.stringify(source.toString())}`
-              : source
-      }}`
-      )
-      .join(',')}
     }
   }
 
-  __bundle.load(${JSON.stringify(bundle.main)})
+  __bundle.load(Object.create(null), ${JSON.stringify(bundle.main)})
 }`
+}
+
+function compileModule(key, source) {
+  if (key.endsWith('.json')) {
+    return `module.exports = ${source}`
+  }
+
+  if (key.endsWith('.bin')) {
+    return `module.exports = new Uint8Array([${Array.from(source)}])`
+  }
+
+  if (key.endsWith('.txt')) {
+    return `module.exports = ${JSON.stringify(source.toString())}`
+  }
+
+  return source
 }
