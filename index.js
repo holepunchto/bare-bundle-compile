@@ -1,5 +1,3 @@
-const PROTOCOL = /^[a-z][a-z\d+\-.]*:\/*/
-
 module.exports = function compile(bundle) {
   return `{
   const __bundle = {
@@ -33,8 +31,8 @@ module.exports = function compile(bundle) {
 
       const { imports, resolutions } = __bundle
 
-      const filename = url.replace(${PROTOCOL}, '/')
-      const dirname = filename.slice(0, filename.lastIndexOf('/')) || '/'
+      const filename = url
+      const dirname = url.slice(0, url.lastIndexOf('/')) || '/'
 
       module = cache[url] = {
         url,

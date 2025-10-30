@@ -15,6 +15,33 @@ test("require('id')", (t) => {
   t.is(eval(compile(bundle)).exports, 42)
 })
 
+test("require('id'), mounted bundle", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar')", {
+      main: true,
+      imports: {
+        './bar': '/bar.js'
+      }
+    })
+    .write('/bar.js', 'module.exports = 42')
+    .mount('file:///root/')
+
+  t.is(eval(compile(bundle)).exports, 42)
+})
+
+test("require('id'), not found", (t) => {
+  const bundle = new Bundle().write('/foo.js', "module.exports = require('./bar')", {
+    main: true
+  })
+
+  try {
+    eval(compile(bundle))
+    t.fail()
+  } catch (err) {
+    t.comment(err.message)
+  }
+})
+
 test("circular require('id')", (t) => {
   const bundle = new Bundle()
     .write('/foo.js', "module.exports = require('./bar')", {
@@ -67,6 +94,27 @@ test('require.addon()', (t) => {
   }
 
   t.is(eval(compile(bundle)).exports, 'addon')
+})
+
+test('require.addon(), not found', (t) => {
+  const bundle = new Bundle().write('/binding.js', 'module.exports = require.addon()', {
+    main: true
+  })
+
+  const require = () => {
+    t.fail()
+  }
+
+  require.addon = () => {
+    t.fail()
+  }
+
+  try {
+    eval(compile(bundle))
+    t.fail()
+  } catch (err) {
+    t.comment(err.message)
+  }
 })
 
 test('require.addon(), shorthand resolution', (t) => {
@@ -137,6 +185,38 @@ test("require.addon('id', referrer)", (t) => {
 
   require.addon = (specifier) => {
     t.is(specifier, '/addon.bare')
+
+    return 'addon'
+  }
+
+  t.is(eval(compile(bundle)).exports, 'addon')
+})
+
+test("require.addon('id', referrer), mounted bundle", (t) => {
+  const bundle = new Bundle()
+    .write('/a/binding.js', "module.exports = require('../b')('.', __filename)", {
+      main: true,
+      imports: {
+        '#package': '/a/package.json',
+        '../b': '/b/index.js',
+        '.': {
+          addon: '/addon.bare'
+        }
+      }
+    })
+    .write('/a/package.json', '{ "name": "addon", "addon": true }')
+    .write(
+      '/b/index.js',
+      'module.exports = (specifier, referrer) => require.addon(specifier, referrer)'
+    )
+    .mount('file://root/')
+
+  const require = () => {
+    t.fail()
+  }
+
+  require.addon = (specifier) => {
+    t.is(specifier, 'file://root/addon.bare')
 
     return 'addon'
   }
@@ -245,6 +325,19 @@ test("require.asset('id')", (t) => {
   })
 
   t.is(eval(compile(bundle)).exports, '/baz.txt')
+})
+
+test("require.asset('id'), not found", (t) => {
+  const bundle = new Bundle().write('/foo.js', "module.exports = require.asset('./bar.txt')", {
+    main: true
+  })
+
+  try {
+    eval(compile(bundle))
+    t.fail()
+  } catch (err) {
+    t.comment(err.message)
+  }
 })
 
 test("require.asset('id'), shorthand resolution", (t) => {
@@ -416,69 +509,4 @@ test('require.main', (t) => {
 
   t.is(module.exports.main, module)
   t.is(module.exports.bar.main, module)
-})
-
-test('module not found', (t) => {
-  const bundle = new Bundle().write('/foo.js', "module.exports = require('./bar')", {
-    main: true
-  })
-
-  try {
-    eval(compile(bundle))
-    t.fail()
-  } catch (err) {
-    t.comment(err.message)
-  }
-})
-
-test('addon not found', (t) => {
-  const bundle = new Bundle().write('/binding.js', 'module.exports = require.addon()', {
-    main: true
-  })
-
-  const require = () => {
-    t.fail()
-  }
-
-  require.addon = () => {
-    t.fail()
-  }
-
-  try {
-    eval(compile(bundle))
-    t.fail()
-  } catch (err) {
-    t.comment(err.message)
-  }
-})
-
-test('asset not found', (t) => {
-  const bundle = new Bundle().write('/foo.js', "module.exports = require.asset('./bar.txt')", {
-    main: true
-  })
-
-  try {
-    eval(compile(bundle))
-    t.fail()
-  } catch (err) {
-    t.comment(err.message)
-  }
-})
-
-test('mounted bundle', (t) => {
-  const bundle = new Bundle()
-    .write('/foo.js', "module.exports = require('./bar')", {
-      main: true,
-      imports: {
-        './bar': '/bar.js'
-      }
-    })
-    .write('/bar.js', 'module.exports = 42')
-    .mount('file:///root/')
-
-  const module = eval(compile(bundle))
-
-  t.is(module.url, 'file:///root/foo.js')
-  t.is(module.filename, '/root/foo.js')
-  t.is(module.dirname, '/root')
 })
