@@ -6,6 +6,9 @@ Compile a bundle of CommonJS modules to a single module.
 npm i bare-bundle-compile
 ```
 
+> [!NOTE]
+> Bundle compilation is designed for situations where no existing module system is available and where no APIs beyond ECMAScript builtins exist. For a more general approach to running bundles across JavaScript runtimes, see <https://github.com/holepunchto/bare-bundle-evaluate>.
+
 ## Usage
 
 ```js
