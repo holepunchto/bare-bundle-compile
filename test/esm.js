@@ -3,8 +3,6 @@ const Bundle = require('bare-bundle')
 const compile = require('..')
 const { b64, uri } = require('./helpers')
 
-const { MODULE } = compile.constants
-
 test("import 'id'", (t) => {
   const bundle = new Bundle()
     .write('/foo.js', "import './bar'", {
@@ -15,7 +13,7 @@ test("import 'id'", (t) => {
     })
     .write('/bar.js', 'export default 42')
 
-  t.alike(compile(bundle, { type: MODULE }), {
+  t.alike(compile(bundle, { type: 'module' }), {
     main: b64('/foo.js'),
     imports: {
       [b64('/foo.js')]: uri(`import '${b64('/bar.js')}'`),
@@ -36,7 +34,7 @@ test("import 'id', multiple imports", (t) => {
     .write('/bar.js', 'export default 42')
     .write('/baz.js', 'export default 42')
 
-  t.alike(compile(bundle, { type: MODULE }), {
+  t.alike(compile(bundle, { type: 'module' }), {
     main: b64('/foo.js'),
     imports: {
       [b64('/foo.js')]: uri(`import '${b64('/bar.js')}', import '${b64('/baz.js')}'`),
@@ -57,7 +55,7 @@ test("import 'id', mounted bundle", (t) => {
     .write('/bar.js', 'export default 42')
     .mount('file:///root/')
 
-  t.alike(compile(bundle, { type: MODULE }), {
+  t.alike(compile(bundle, { type: 'module' }), {
     main: b64('file:///root/foo.js'),
     imports: {
       [b64('file:///root/foo.js')]: uri(`import '${b64('file:///root/bar.js')}'`),
@@ -72,7 +70,7 @@ test("import 'id', not found", (t) => {
   })
 
   try {
-    compile(bundle, { type: MODULE })
+    compile(bundle, { type: 'module' })
     t.fail()
   } catch (err) {
     t.comment(err.message)
@@ -93,7 +91,7 @@ test("circular import 'id'", (t) => {
       }
     })
 
-  t.alike(compile(bundle, { type: MODULE }), {
+  t.alike(compile(bundle, { type: 'module' }), {
     main: b64('/foo.js'),
     imports: {
       [b64('/foo.js')]: uri(`import '${b64('/bar.js')}'`),

@@ -1,21 +1,17 @@
 const cjs = require('./lib/cjs')
 const esm = require('./lib/esm')
 
-const constants = {
-  SCRIPT: 1,
-  MODULE: 2
-}
-
 module.exports = exports = function compile(bundle, opts = {}) {
-  const { type = constants.SCRIPT } = opts
+  const { type = 'script' } = opts
 
   switch (type) {
-    case constants.SCRIPT:
+    case 'script':
     default:
       return cjs(bundle)
-    case constants.MODULE:
+    case 'module':
       return esm(bundle)
   }
 }
 
-exports.constants = constants
+exports.cjs = cjs
+exports.esm = esm

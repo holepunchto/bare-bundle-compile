@@ -26,13 +26,40 @@ const bundle = new Bundle()
   })
   .write('/bar.js', 'module.exports = 42')
 
-eval(compile(bundle)).exports
+eval(compile(bundle, { type: 'script' })).exports
 // 42
+```
+
+### ESM
+
+```js
+const Bundle = require('bare-bundle')
+const compile = require('bare-bundle-compile')
+
+const bundle = new Bundle()
+  .write('/foo.js', "import bar from './bar'", {
+    main: true,
+    imports: {
+      './bar': '/bar.js'
+    }
+  })
+  .write('/bar.js', 'export default 42')
+
+const { main, imports } = compile(bundle, { type: 'module' })
+
+html`<script type="importmap">
+    ${JSON.stringify(imports)}
+  </script>
+
+  <script type="module">
+    await import(${JSON.stringify(main)})
+    // Module { default: 42 }
+  </script>`
 ```
 
 ## API
 
-#### `const code = compile(bundle)`
+#### `const result = compile(bundle[, options])`
 
 ## License
 
