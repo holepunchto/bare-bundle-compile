@@ -1,13 +1,16 @@
 {
   "name": "bare-bundle-compile",
   "version": "1.2.2",
-  "description": "Compile a bundle of CommonJS modules to a single module",
+  "description": "Compile a bundle of CommonJS or ES modules",
   "exports": {
     "./package": "./package.json",
-    ".": "./index.js"
+    ".": "./index.js",
+    "./cjs": "./lib/cjs.js",
+    "./esm": "./lib/esm.js"
   },
   "files": [
-    "index.js"
+    "index.js",
+    "lib"
   ],
   "scripts": {
     "test": "npm run lint && npm run test:bare && npm run test:node",
@@ -25,6 +28,9 @@
     "url": "https://github.com/holepunchto/bare-bundle-compile/issues"
   },
   "homepage": "https://github.com/holepunchto/bare-bundle-compile#readme",
+  "dependencies": {
+    "bare-module-lexer": "^1.4.6"
+  },
   "peerDependencies": {
     "bare-bundle": "^1.8.0"
   },
