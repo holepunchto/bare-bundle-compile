@@ -23,3 +23,59 @@ test("import 'id'", (t) => {
     }
   })
 })
+
+test("import 'id', mounted bundle", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "import './bar'", {
+      main: true,
+      imports: {
+        './bar': '/bar.js'
+      }
+    })
+    .write('/bar.js', 'export default 42')
+    .mount('file:///root/')
+
+  t.alike(compile(bundle, { type: MODULE }), {
+    main: b64('file:///root/foo.js'),
+    imports: {
+      [b64('file:///root/foo.js')]: uri(`import '${b64('file:///root/bar.js')}'`),
+      [b64('file:///root/bar.js')]: uri(`export default 42`)
+    }
+  })
+})
+
+test("import 'id', not found", (t) => {
+  const bundle = new Bundle().write('/foo.js', "import './bar'", {
+    main: true
+  })
+
+  try {
+    compile(bundle, { type: MODULE })
+    t.fail()
+  } catch (err) {
+    t.comment(err.message)
+  }
+})
+
+test("circular import 'id'", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "import './bar'", {
+      main: true,
+      imports: {
+        './bar': '/bar.js'
+      }
+    })
+    .write('/bar.js', "import './foo'", {
+      imports: {
+        './foo': '/foo.js'
+      }
+    })
+
+  t.alike(compile(bundle, { type: MODULE }), {
+    main: b64('/foo.js'),
+    imports: {
+      [b64('/foo.js')]: uri(`import '${b64('/bar.js')}'`),
+      [b64('/bar.js')]: uri(`import '${b64('/foo.js')}'`)
+    }
+  })
+})
