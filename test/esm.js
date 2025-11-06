@@ -24,6 +24,28 @@ test("import 'id'", (t) => {
   })
 })
 
+test("import 'id', multiple imports", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "import './bar', import './baz'", {
+      main: true,
+      imports: {
+        './bar': '/bar.js',
+        './baz': '/baz.js'
+      }
+    })
+    .write('/bar.js', 'export default 42')
+    .write('/baz.js', 'export default 42')
+
+  t.alike(compile(bundle, { type: MODULE }), {
+    main: b64('/foo.js'),
+    imports: {
+      [b64('/foo.js')]: uri(`import '${b64('/bar.js')}', import '${b64('/baz.js')}'`),
+      [b64('/bar.js')]: uri(`export default 42`),
+      [b64('/baz.js')]: uri(`export default 42`)
+    }
+  })
+})
+
 test("import 'id', mounted bundle", (t) => {
   const bundle = new Bundle()
     .write('/foo.js', "import './bar'", {
