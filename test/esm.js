@@ -1,6 +1,6 @@
 const test = require('brittle')
 const Bundle = require('bare-bundle')
-const compile = require('..')
+const compile = require('../lib/esm')
 const { b64, uri } = require('./helpers')
 
 test("import 'id'", (t) => {
@@ -13,7 +13,7 @@ test("import 'id'", (t) => {
     })
     .write('/bar.js', 'export default 42')
 
-  t.alike(compile(bundle, { type: 'module' }), {
+  t.alike(compile(bundle), {
     main: b64('/foo.js'),
     imports: {
       [b64('/foo.js')]: uri(`import '${b64('/bar.js')}'`),
@@ -34,7 +34,7 @@ test("import 'id', multiple imports", (t) => {
     .write('/bar.js', 'export default 42')
     .write('/baz.js', 'export default 42')
 
-  t.alike(compile(bundle, { type: 'module' }), {
+  t.alike(compile(bundle), {
     main: b64('/foo.js'),
     imports: {
       [b64('/foo.js')]: uri(`import '${b64('/bar.js')}', import '${b64('/baz.js')}'`),
@@ -55,7 +55,7 @@ test("import 'id', mounted bundle", (t) => {
     .write('/bar.js', 'export default 42')
     .mount('file:///root/')
 
-  t.alike(compile(bundle, { type: 'module' }), {
+  t.alike(compile(bundle), {
     main: b64('file:///root/foo.js'),
     imports: {
       [b64('file:///root/foo.js')]: uri(`import '${b64('file:///root/bar.js')}'`),
@@ -70,7 +70,7 @@ test("import 'id', not found", (t) => {
   })
 
   try {
-    compile(bundle, { type: 'module' })
+    compile(bundle)
     t.fail()
   } catch (err) {
     t.comment(err.message)
@@ -91,7 +91,7 @@ test("circular import 'id'", (t) => {
       }
     })
 
-  t.alike(compile(bundle, { type: 'module' }), {
+  t.alike(compile(bundle), {
     main: b64('/foo.js'),
     imports: {
       [b64('/foo.js')]: uri(`import '${b64('/bar.js')}'`),

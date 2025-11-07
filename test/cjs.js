@@ -1,6 +1,6 @@
 const test = require('brittle')
 const Bundle = require('bare-bundle')
-const compile = require('..')
+const compile = require('../lib/cjs')
 
 test("require('id')", (t) => {
   const bundle = new Bundle()

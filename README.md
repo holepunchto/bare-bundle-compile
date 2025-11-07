@@ -15,7 +15,7 @@ npm i bare-bundle-compile
 
 ```js
 const Bundle = require('bare-bundle')
-const compile = require('bare-bundle-compile')
+const compile = require('bare-bundle-compile/cjs')
 
 const bundle = new Bundle()
   .write('/foo.js', "module.exports = require('./bar')", {
@@ -26,7 +26,7 @@ const bundle = new Bundle()
   })
   .write('/bar.js', 'module.exports = 42')
 
-eval(compile(bundle, { type: 'script' })).exports
+eval(compile(bundle)).exports
 // 42
 ```
 
@@ -34,7 +34,7 @@ eval(compile(bundle, { type: 'script' })).exports
 
 ```js
 const Bundle = require('bare-bundle')
-const compile = require('bare-bundle-compile')
+const compile = require('bare-bundle-compile/esm')
 
 const bundle = new Bundle()
   .write('/foo.js', "import bar from './bar'", {
@@ -45,7 +45,7 @@ const bundle = new Bundle()
   })
   .write('/bar.js', 'export default 42')
 
-const { main, imports } = compile(bundle, { type: 'module' })
+const { main, imports } = compile(bundle)
 
 html`<script type="importmap">
     ${JSON.stringify(imports)}
@@ -59,7 +59,9 @@ html`<script type="importmap">
 
 ## API
 
-#### `const result = compile(bundle[, options])`
+#### `const result = compile.cjs(bundle)`
+
+#### `const result = compile.esm(bundle)`
 
 ## License
 
