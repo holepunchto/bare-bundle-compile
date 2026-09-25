@@ -510,3 +510,125 @@ test('require.main', (t) => {
   t.is(module.exports.main, module)
   t.is(module.exports.bar.main, module)
 })
+
+test("require('id'), resolved for the require condition", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar')", {
+      main: true,
+      imports: {
+        './bar': { require: '/bar.js', import: '/baz.js' }
+      }
+    })
+    .write('/bar.js', 'module.exports = 42')
+    .write('/baz.js', 'module.exports = 43')
+
+  t.is(eval(compile(bundle)).exports, 42)
+})
+
+test("require('id'), resolved for another condition", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar')", {
+      main: true,
+      imports: {
+        './bar': { import: '/bar.js' }
+      }
+    })
+    .write('/bar.js', 'module.exports = 42')
+
+  t.exception(() => eval(compile(bundle)), /Cannot find module/)
+})
+
+test("require('id') and require.asset('id'), same resolution", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = [require('./bar'), require.asset('./bar')]", {
+      main: true,
+      imports: {
+        './bar': { require: '/bar.js', asset: '/bar.js' }
+      }
+    })
+    .write('/bar.js', 'module.exports = 42')
+
+  t.alike(eval(compile(bundle)).exports, [42, '/bar.js'])
+})
+
+test("require('id') and require.asset('id'), asset ahead of the default", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = [require('./bar'), require.asset('./bar')]", {
+      main: true,
+      imports: {
+        './bar': { asset: '/bar.txt', default: '/bar.js' }
+      }
+    })
+    .write('/bar.js', 'module.exports = 42')
+
+  t.alike(eval(compile(bundle)).exports, [42, '/bar.txt'])
+})
+
+test('require.addon(), conditional on the host', (t) => {
+  const bundle = new Bundle().write('/binding.js', 'module.exports = require.addon()', {
+    main: true,
+    imports: {
+      '.': {
+        addon: {
+          ios: '/ios.bare',
+          darwin: { x64: '/darwin-x64.bare', arm64: '/darwin-arm64.bare' },
+          default: '/other.bare'
+        }
+      }
+    }
+  })
+
+  const require = () => {
+    t.fail()
+  }
+
+  require.addon = (specifier) => specifier
+
+  require.addon.host = 'darwin-arm64'
+
+  t.is(eval(compile(bundle)).exports, '/darwin-arm64.bare')
+})
+
+test('require.addon(), conditional on another host', (t) => {
+  const bundle = new Bundle().write('/binding.js', 'module.exports = require.addon()', {
+    main: true,
+    imports: {
+      '.': {
+        addon: { ios: '/ios.bare', android: '/android.bare' }
+      }
+    }
+  })
+
+  const require = () => {
+    t.fail()
+  }
+
+  require.addon = () => {
+    t.fail()
+  }
+
+  require.addon.host = 'darwin-arm64'
+
+  t.exception(() => eval(compile(bundle)), /Cannot find addon/)
+})
+
+test('require.addon(), host default', (t) => {
+  const bundle = new Bundle().write('/binding.js', 'module.exports = require.addon()', {
+    main: true,
+    imports: {
+      '.': {
+        addon: { ios: '/ios.bare', default: '/other.bare' }
+      }
+    }
+  })
+
+  const require = () => {
+    t.fail()
+  }
+
+  require.addon = (specifier) => specifier
+
+  require.addon.host = 'darwin-arm64'
+
+  t.is(eval(compile(bundle)).exports, '/other.bare')
+})
