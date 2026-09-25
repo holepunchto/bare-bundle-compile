@@ -89,31 +89,55 @@ module.exports = function compile(bundle) {
       return module
     },
     resolve(specifier, parentURL) {
-      const resolved = __bundle.imports[specifier] || __bundle.resolutions[parentURL]?.[specifier]
+      const resolved = __bundle.lookup(specifier, parentURL, 'require')
 
-      if (!resolved || (typeof resolved === 'object' && !resolved.default)) {
+      if (resolved === null) {
         throw new Error(\`Cannot find module '\${specifier}' imported from '\${parentURL}'\`)
       }
 
-      return typeof resolved === 'object' ? resolved.default : resolved
+      return resolved
     },
     addon(specifier = '.', parentURL) {
-      const resolved = __bundle.imports[specifier] || __bundle.resolutions[parentURL]?.[specifier]
+      const resolved = __bundle.lookup(specifier, parentURL, 'addon')
 
-      if (!resolved || (typeof resolved === 'object' && !resolved.addon)) {
+      if (resolved === null) {
         throw new Error(\`Cannot find addon '\${specifier}' imported from '\${parentURL}'\`)
       }
 
-      return typeof resolved === 'object' ? resolved.addon : resolved
+      return resolved
     },
     asset(specifier, parentURL) {
-      const resolved = __bundle.imports[specifier] || __bundle.resolutions[parentURL]?.[specifier]
+      const resolved = __bundle.lookup(specifier, parentURL, 'asset')
 
-      if (!resolved || (typeof resolved === 'object' && !resolved.asset)) {
+      if (resolved === null) {
         throw new Error(\`Cannot find asset '\${specifier}' imported from '\${parentURL}'\`)
       }
 
-      return typeof resolved === 'object' ? resolved.asset : resolved
+      return resolved
+    },
+    lookup(specifier, parentURL, condition) {
+      const resolved = __bundle.imports[specifier] || __bundle.resolutions[parentURL]?.[specifier]
+
+      const host = __bundle.builtinRequire?.addon?.host
+
+      const conditions = [condition, 'bare', 'node', ...(host ? host.split('-') : [])]
+
+      return __bundle.pick(resolved, conditions)
+    },
+    pick(resolved, conditions) {
+      if (typeof resolved === 'string') return resolved
+
+      if (typeof resolved !== 'object' || resolved === null) return null
+
+      for (const [condition, target] of Object.entries(resolved)) {
+        if (condition !== 'default' && !conditions.includes(condition)) continue
+
+        const picked = __bundle.pick(target, conditions)
+
+        if (picked !== null) return picked
+      }
+
+      return null
     }
   }
 
