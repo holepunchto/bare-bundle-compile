@@ -1,6 +1,13 @@
+const hostParser = require('bare-host-parser')
+
+// The compiled bundle runs before any module system is available, so it carries
+// its own copy of the matching that `conditions()` from `bare-host-parser` does.
 module.exports = function compile(bundle) {
   return `{
   const __bundle = {
+    platforms: ${JSON.stringify(hostParser.platforms)},
+    architectures: ${JSON.stringify(hostParser.architectures)},
+    environments: ${JSON.stringify(hostParser.environments)},
     imports: ${JSON.stringify(bundle.imports)},
     resolutions: ${JSON.stringify(bundle.resolutions)},
     modules: {${[...bundle].map(
@@ -120,9 +127,29 @@ module.exports = function compile(bundle) {
 
       const host = __bundle.builtinRequire?.addon?.host
 
-      const conditions = [condition, 'bare', 'node', ...(host ? host.split('-') : [])]
+      const conditions = [condition, 'bare', 'node', ...(host ? __bundle.hostConditions(host) : [])]
 
       return __bundle.pick(resolved, conditions)
+    },
+    hostConditions(host) {
+      const i = host.indexOf('-')
+
+      const platform = host.slice(0, i)
+      const rest = host.slice(i + 1)
+
+      if (i !== -1 && __bundle.platforms.includes(platform)) {
+        for (const arch of __bundle.architectures) {
+          if (rest === arch) return [platform, arch]
+
+          if (rest.startsWith(arch + '-')) {
+            const environment = rest.slice(arch.length + 1)
+
+            if (__bundle.environments.includes(environment)) return [platform, arch, environment]
+          }
+        }
+      }
+
+      return host.split('-')
     },
     pick(resolved, conditions) {
       if (typeof resolved === 'string') return resolved

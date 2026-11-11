@@ -632,3 +632,47 @@ test('require.addon(), host default', (t) => {
 
   t.is(eval(compile(bundle)).exports, '/other.bare')
 })
+
+test('require.addon(), conditional on a host with a hyphenated architecture', (t) => {
+  const bundle = new Bundle().write('/binding.js', 'module.exports = require.addon()', {
+    main: true,
+    imports: {
+      '.': {
+        addon: {
+          watchos: { arm64: '/watchos-arm64.bare', 'arm64-32': '/watchos-arm64-32.bare' }
+        }
+      }
+    }
+  })
+
+  const require = () => {
+    t.fail()
+  }
+
+  require.addon = (specifier) => specifier
+
+  require.addon.host = 'watchos-arm64-32'
+
+  t.is(eval(compile(bundle)).exports, '/watchos-arm64-32.bare')
+})
+
+test('require.addon(), conditional on an unknown host', (t) => {
+  const bundle = new Bundle().write('/binding.js', 'module.exports = require.addon()', {
+    main: true,
+    imports: {
+      '.': {
+        addon: { host: { a: '/host-a.bare' } }
+      }
+    }
+  })
+
+  const require = () => {
+    t.fail()
+  }
+
+  require.addon = (specifier) => specifier
+
+  require.addon.host = 'host-a'
+
+  t.is(eval(compile(bundle)).exports, '/host-a.bare')
+})

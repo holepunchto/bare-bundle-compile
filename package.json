@@ -26,6 +26,9 @@
     "url": "https://github.com/holepunchto/bare-bundle-compile/issues"
   },
   "homepage": "https://github.com/holepunchto/bare-bundle-compile#readme",
+  "dependencies": {
+    "bare-host-parser": "^1.0.0"
+  },
   "peerDependencies": {
     "bare-bundle": "^1.8.0"
   },
