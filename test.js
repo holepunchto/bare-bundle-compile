@@ -495,6 +495,53 @@ test("require('id', { with: { type: 'type' } }), asserted type mismatch", (t) =>
   }
 })
 
+test("require('id'), declared type", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar.js')", {
+      main: true,
+      imports: {
+        './bar.js': '/bar.js'
+      }
+    })
+    .write('/bar.js', '{ "hello": "world" }', { type: 'json' })
+
+  t.alike(eval(compile(bundle)).exports, {
+    hello: 'world'
+  })
+})
+
+test("require('id', { with: { type: 'json' } }), declared type", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar.js', { with: { type: 'json' } })", {
+      main: true,
+      imports: {
+        './bar.js': '/bar.js'
+      }
+    })
+    .write('/bar.js', '{ "hello": "world" }', { type: 'json' })
+
+  t.alike(eval(compile(bundle)).exports, {
+    hello: 'world'
+  })
+})
+
+test("require('id', { with: { imports: 'specifier' } })", (t) => {
+  const bundle = new Bundle()
+    .write(
+      '/foo.js',
+      "module.exports = require('./bar.js', { with: { imports: './imports.json' } })",
+      {
+        main: true,
+        imports: {
+          './bar.js': '/bar.js'
+        }
+      }
+    )
+    .write('/bar.js', 'module.exports = 42')
+
+  t.is(eval(compile(bundle)).exports, 42)
+})
+
 test('require.main', (t) => {
   const bundle = new Bundle()
     .write('/foo.js', "exports.main = require.main, exports.bar = require('./bar')", {

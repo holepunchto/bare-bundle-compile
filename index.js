@@ -3,6 +3,8 @@ const hostParser = require('bare-host-parser')
 // The compiled bundle runs before any module system is available, so it carries
 // its own copy of the matching that `conditions()` from `bare-host-parser` does.
 module.exports = function compile(bundle) {
+  const types = Object.fromEntries([...bundle].map(([key]) => [key, typeOf(bundle, key)]))
+
   return `{
   const __bundle = {
     platforms: ${JSON.stringify(hostParser.platforms)},
@@ -10,26 +12,23 @@ module.exports = function compile(bundle) {
     environments: ${JSON.stringify(hostParser.environments)},
     imports: ${JSON.stringify(bundle.imports)},
     resolutions: ${JSON.stringify(bundle.resolutions)},
+    types: ${JSON.stringify(types)},
     modules: {${[...bundle].map(
       ([key, source]) =>
         `${JSON.stringify(key)}: (require, module, exports, __filename, __dirname, __bundle) => {${compileModule(
-          key,
+          types[key],
           source
         )}}`
     )}
     },
     builtinRequire: typeof require === 'function' ? require : null,
     load(cache, url, referrer = null, attributes = null) {
-      const type = url.endsWith('.json')
-        ? 'json'
-        : url.endsWith('.bin')
-          ? 'binary'
-          : url.endsWith('.txt')
-            ? 'text'
-            : 'script'
+      const type = __bundle.types[url] || 'script'
 
-      if (typeof attributes === 'object' && attributes !== null && attributes.type !== type) {
-        throw new Error(\`Module '\${url}' is not of type '\${attributes.type}'\`)
+      const requested = attributes?.type
+
+      if (requested !== undefined && requested !== type) {
+        throw new Error(\`Module '\${url}' is not of type '\${requested}'\`)
       }
 
       let module = cache[url] || null
@@ -172,18 +171,33 @@ module.exports = function compile(bundle) {
 }`
 }
 
-function compileModule(key, source) {
-  if (key.endsWith('.json')) {
-    return `module.exports = ${source}`
+function typeOf(bundle, key) {
+  const type = bundle.type(key)
+
+  switch (type) {
+    case 'script':
+    case 'json':
+    case 'binary':
+    case 'text':
+      return type
   }
 
-  if (key.endsWith('.bin')) {
-    return `module.exports = new Uint8Array([${Array.from(source)}])`
-  }
+  if (key.endsWith('.json')) return 'json'
+  if (key.endsWith('.bin')) return 'binary'
+  if (key.endsWith('.txt')) return 'text'
 
-  if (key.endsWith('.txt')) {
-    return `module.exports = ${JSON.stringify(source.toString())}`
-  }
+  return 'script'
+}
 
-  return source
+function compileModule(type, source) {
+  switch (type) {
+    case 'json':
+      return `module.exports = ${source}`
+    case 'binary':
+      return `module.exports = new Uint8Array([${Array.from(source)}])`
+    case 'text':
+      return `module.exports = ${JSON.stringify(source.toString())}`
+    default:
+      return source
+  }
 }
